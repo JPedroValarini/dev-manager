@@ -9,16 +9,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
-RUN composer install
+RUN composer install --no-dev --no-scripts --no-autoloader
 
 COPY . .
-
 RUN composer dump-autoload --optimize
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
+# CMD php artisan serve --host=0.0.0.0 --port=4040
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=4040"]
