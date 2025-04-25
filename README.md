@@ -14,15 +14,15 @@ Dev Manager é uma aplicação full-stack construída com **Laravel** (backend) 
 
 ## 🚀 Pré-requisitos
 
-Antes de rodar o projeto, certifique-se de ter o **Docker** e o **Docker Compose** instalados na sua máquina. Caso não tenha, você pode seguir a [documentação oficial do Docker](https://docs.docker.com/get-docker/) para instalá-los.
+Antes de rodar o projeto, certifique-se de ter o **Docker** e o **Docker Compose** instalados na sua máquina.
 
 ## 🧑‍💻 Instalação
 
 ### Passo 1: Clone o repositório
 
 ```bash
-git clone https://seu-repositorio.git
-cd dev-manager
+git clone https://github.com/JPedroValarini/dev-manager.git
+cd backend/dev-manager
 ```
 
 ### Passo 2: Rodando o Docker
