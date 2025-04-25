@@ -25,7 +25,7 @@ function HomePage() {
                 <FiUsers size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Total Developers</p>
+                <p className="text-sm text-gray-500">Quantidade Desenvolvedores</p>
                 <p className="text-2xl font-semibold">24</p>
               </div>
             </div>
@@ -37,7 +37,7 @@ function HomePage() {
                 <FiTrendingUp size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Senior Level</p>
+                <p className="text-sm text-gray-500">Nível Sênior</p>
                 <p className="text-2xl font-semibold">8</p>
               </div>
             </div>
@@ -49,7 +49,7 @@ function HomePage() {
                 <FiBarChart2 size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Avg. Experience</p>
+                <p className="text-sm text-gray-500">Exp. Média</p>
                 <p className="text-2xl font-semibold">3.2 anos</p>
               </div>
             </div>

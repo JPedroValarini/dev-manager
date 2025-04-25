@@ -1,18 +1,44 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiUser, FiStar } from "react-icons/fi";
 import Header from "../components/Header";
+import api from "../services/api";
 
 function DevelopersPage() {
-  const [developers, setDevelopers] = useState([
-    { id: 1, name: "João Silva", level: "Junior", skills: ["React", "Node.js"], joinDate: "2023-01-15" },
-    { id: 2, name: "Maria Souza", level: "Mid", skills: ["TypeScript", "AWS"], joinDate: "2022-05-20" },
-    { id: 3, name: "Pedro Costa", level: "Senior", skills: ["Architecture", "Docker"], joinDate: "2021-11-03" },
-  ]);
-  
+  const [developers, setDevelopers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [developerToDelete, setDeveloperToDelete] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDevelopers = async () => {
+      try {
+        const response = await api.getDevelopers();
+        const formattedDevelopers = response.data.map(dev => ({
+          id: dev.id,
+          name: dev.name,
+          level: dev.level.level,
+          levelId: dev.level_id,
+          sex: dev.sex,
+          age: dev.age,
+          birthDate: dev.birth_date,
+          hobby: dev.hobby,
+          joinDate: dev.created_at,
+          skills: dev.hobby ? dev.hobby.split(' ') : []
+        }));
+        setDevelopers(formattedDevelopers);
+      } catch (err) {
+        setError("Erro ao carregar desenvolvedores");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDevelopers();
+  }, []);
 
   const filteredDevelopers = developers
     .filter(dev => 
@@ -21,9 +47,15 @@ function DevelopersPage() {
     )
     .filter(dev => activeTab === "all" || dev.level === activeTab);
 
-  const handleDelete = (id) => {
-    setDevelopers(developers.filter(dev => dev.id !== id));
-    setIsDeleteModalOpen(false);
+  const handleDelete = async (id) => {
+    try {
+      await api.deleteDeveloper(id);
+      setDevelopers(developers.filter(dev => dev.id !== id));
+      setIsDeleteModalOpen(false);
+    } catch (err) {
+      console.error("Erro ao deletar desenvolvedor:", err);
+      alert("Erro ao deletar desenvolvedor");
+    }
   };
 
   const openDeleteModal = (id) => {
@@ -33,32 +65,62 @@ function DevelopersPage() {
 
   const getLevelColor = (level) => {
     switch(level) {
-      case "Junior": return "bg-blue-100 text-blue-800";
-      case "Mid": return "bg-green-100 text-green-800";
+      case "Júnior": return "bg-blue-100 text-blue-800";
+      case "Pleno": return "bg-green-100 text-green-800";
+      case "Sênior": 
       case "Senior": return "bg-purple-100 text-purple-800";
+      case "Tech Lead": return "bg-yellow-100 text-yellow-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
 
+  const calculateAverageExperience = () => {
+    if (developers.length === 0) return 0;
+    const totalAge = developers.reduce((sum, dev) => sum + dev.age, 0);
+    return (totalAge / developers.length).toFixed(1);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <Header />
+        <div className="flex justify-center items-center h-64">
+          <p>Carregando desenvolvedores...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <Header />
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Erro! </strong>
+          <span className="block sm:inline">{error}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-
       <Header />
 
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Developers Team</h1>
-              <p className="mt-2 text-gray-600">Manage your development team members</p>
+              <h1 className="text-3xl font-bold text-gray-900">Time de Desenvolvedores</h1>
+              <p className="mt-2 text-gray-600">Organize seu time de Desenvolvedores</p>
             </div>
             
             <button
               className="mt-4 md:mt-0 flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg shadow hover:shadow-md transition-all hover:scale-105"
-              onClick={() => alert("Add new developer")}
+              onClick={() => alert("Adicionar um Desenvolvedor")}
             >
               <FiPlus className="mr-2" />
-              Add New Developer
+              Adicionar
             </button>
           </div>
 
@@ -70,7 +132,7 @@ function DevelopersPage() {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search developers..."
+                  placeholder="Pesquisar Dev..."
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -82,25 +144,25 @@ function DevelopersPage() {
                   onClick={() => setActiveTab("all")}
                   className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${activeTab === "all" ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}
                 >
-                  All Developers
+                  Todos Devs
                 </button>
                 <button
-                  onClick={() => setActiveTab("Junior")}
-                  className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${activeTab === "Junior" ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}
+                  onClick={() => setActiveTab("Júnior")}
+                  className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${activeTab === "Júnior" ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}
                 >
                   Juniors
                 </button>
                 <button
-                  onClick={() => setActiveTab("Mid")}
-                  className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${activeTab === "Mid" ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+                  onClick={() => setActiveTab("Pleno")}
+                  className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${activeTab === "Pleno" ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
                 >
-                  Mid-Level
+                  Pleno
                 </button>
                 <button
-                  onClick={() => setActiveTab("Senior")}
-                  className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${activeTab === "Senior" ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}
+                  onClick={() => setActiveTab("Sênior")}
+                  className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${activeTab === "Sênior" ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}
                 >
-                  Seniors
+                  Sêniors
                 </button>
               </div>
             </div>
@@ -112,19 +174,19 @@ function DevelopersPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Developer
+                      Desenvolvedores
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Level
+                      Nível
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Skills
+                      Habilidades
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Joined
+                      Idade
                     </th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      Ações
                     </th>
                   </tr>
                 </thead>
@@ -158,21 +220,21 @@ function DevelopersPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(dev.joinDate).toLocaleDateString()}
+                          {dev.age} anos
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end space-x-3">
                             <button
-                              onClick={() => alert(`Edit developer ${dev.name}`)}
+                              onClick={() => alert(`Editar desenvolvedor ${dev.name}`)}
                               className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors"
-                              title="Edit"
+                              title="Editar"
                             >
                               <FiEdit2 className="h-5 w-5" />
                             </button>
                             <button
                               onClick={() => openDeleteModal(dev.id)}
                               className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50 transition-colors"
-                              title="Delete"
+                              title="Deletar"
                             >
                               <FiTrash2 className="h-5 w-5" />
                             </button>
@@ -183,7 +245,7 @@ function DevelopersPage() {
                   ) : (
                     <tr>
                       <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
-                        No developers found. Try adjusting your search or filters.
+                        Nenhum desenvolvedor encontrado. Tente ajustar sua busca ou filtros.
                       </td>
                     </tr>
                   )}
@@ -194,21 +256,23 @@ function DevelopersPage() {
         </div>
       </div>
 
-      <div class="p-6">
+      <div className="p-6">
         <div className="max-w-7xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-xl shadow">
-            <h3 className="text-sm font-medium text-gray-500">Total Developers</h3>
+            <h3 className="text-sm font-medium text-gray-500">Quantidade de Desenvolvedores</h3>
             <p className="mt-1 text-3xl font-semibold text-gray-900">{developers.length}</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow">
-            <h3 className="text-sm font-medium text-gray-500">Senior Developers</h3>
+            <h3 className="text-sm font-medium text-gray-500">Desenvolvedores Sênior</h3>
             <p className="mt-1 text-3xl font-semibold text-purple-600">
-              {developers.filter(d => d.level === "Senior").length}
+              {developers.filter(d => d.level === "Sênior" || d.level === "Senior").length}
             </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow">
-            <h3 className="text-sm font-medium text-gray-500">Avg. Experience</h3>
-            <p className="mt-1 text-3xl font-semibold text-blue-600">2.4 years</p>
+            <h3 className="text-sm font-medium text-gray-500">Idade Média</h3>
+            <p className="mt-1 text-3xl font-semibold text-blue-600">
+              {calculateAverageExperience()} anos
+            </p>
           </div>
         </div>
       </div>
@@ -216,22 +280,22 @@ function DevelopersPage() {
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Deletion</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Confirmar Exclusão</h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this developer? This action cannot be undone.
+              Tem certeza que deseja excluir este desenvolvedor? Esta ação não pode ser desfeita.
             </p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 onClick={() => handleDelete(developerToDelete)}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
               >
-                Delete Developer
+                Excluir
               </button>
             </div>
           </div>

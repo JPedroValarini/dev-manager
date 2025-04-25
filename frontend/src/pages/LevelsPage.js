@@ -1,30 +1,92 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiEdit2, FiTrash2, FiPlus, FiSearch } from "react-icons/fi";
 import Header from "../components/Header";
+import api from "../services/api";
 
 function LevelsPage() {
-  const [levels, setLevels] = useState([
-    { id: 1, name: "Junior", color: "bg-blue-100 text-blue-800" },
-    { id: 2, name: "Mid", color: "bg-green-100 text-green-800" },
-    { id: 3, name: "Senior", color: "bg-purple-100 text-purple-800" },
-  ]);
+  const [levels, setLevels] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [levelToDelete, setLevelToDelete] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Buscar níveis da API
+  useEffect(() => {
+    const fetchLevels = async () => {
+      try {
+        const response = await api.getLevels();
+        const formattedLevels = response.data.map(level => ({
+          id: level.id,
+          name: level.level, // Note que a API retorna "level" e não "name"
+          color: getLevelColor(level.level),
+          createdAt: level.created_at
+        }));
+        setLevels(formattedLevels);
+      } catch (err) {
+        setError("Erro ao carregar níveis");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLevels();
+  }, []);
+
+  const getLevelColor = (levelName) => {
+    switch(levelName.toLowerCase()) {
+      case "júnior": return "bg-blue-100 text-blue-800";
+      case "pleno": return "bg-green-100 text-green-800";
+      case "sênior": 
+      case "senior": return "bg-purple-100 text-purple-800";
+      case "tech lead": return "bg-yellow-100 text-yellow-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
 
   const filteredLevels = levels.filter(level =>
     level.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDelete = (id) => {
-    setLevels(levels.filter(level => level.id !== id));
-    setIsDeleteModalOpen(false);
+  const handleDelete = async (id) => {
+    try {
+      await api.deleteLevel(id);
+      setLevels(levels.filter(level => level.id !== id));
+      setIsDeleteModalOpen(false);
+    } catch (err) {
+      console.error("Erro ao deletar nível:", err);
+      alert("Erro ao deletar nível");
+    }
   };
 
   const openDeleteModal = (id) => {
     setLevelToDelete(id);
     setIsDeleteModalOpen(true);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <Header />
+        <div className="flex justify-center items-center h-64">
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <Header />
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Erro! </strong>
+          <span className="block sm:inline">{error}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -35,16 +97,16 @@ function LevelsPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Level Management</h1>
-              <p className="mt-2 text-gray-600">Manage and organize your team levels</p>
+              <h1 className="text-3xl font-bold text-gray-900">Níveis</h1>
+              <p className="mt-2 text-gray-600">Crie e organize os Níveis dos Desenvolvedores</p>
             </div>
             
             <button
               className="mt-4 md:mt-0 flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg shadow hover:shadow-md transition-all hover:scale-105"
-              onClick={() => alert("Add new level")}
+              onClick={() => alert("Adicionar")}
             >
               <FiPlus className="mr-2" />
-              Add New Level
+              Adicionar
             </button>
           </div>
 
@@ -55,7 +117,7 @@ function LevelsPage() {
               </div>
               <input
                 type="text"
-                placeholder="Search levels..."
+                placeholder="Pesquisar..."
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -72,10 +134,10 @@ function LevelsPage() {
                       ID
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Level Name
+                      Nivéis
                     </th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      Ações
                     </th>
                   </tr>
                 </thead>
@@ -114,7 +176,7 @@ function LevelsPage() {
                   ) : (
                     <tr>
                       <td colSpan="3" className="px-6 py-4 text-center text-sm text-gray-500">
-                        No levels found. Try a different search term.
+                        Nenhum Nível cadastrado.
                       </td>
                     </tr>
                   )}
@@ -129,7 +191,7 @@ function LevelsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Deletion</h3>
-            <p className="text-gray-600 mb-6">Are you sure you want to delete this level? This action cannot be undone.</p>
+            <p className="text-gray-600 mb-6">Tem certeza que vai deletar?.</p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}

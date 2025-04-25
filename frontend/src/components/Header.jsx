@@ -13,7 +13,7 @@ const Header = () => {
 
   return (
     <div class="px-4">
-      <div className="bg-white shadow-sm max-w-7xl mx-auto">
+      <div className="bg-white shadow-sm max-w-7xl mx-auto border rounded-xl">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center h-[6rem]">
             <div className="flex items-center">
