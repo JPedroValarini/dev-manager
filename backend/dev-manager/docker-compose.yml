@@ -1,22 +1,27 @@
 version: '3.8'
 
 services:
-  app:
+  backend:
     build:
       context: .
+      args:
+        APP_ENV: development
     container_name: devmanager-backend
     volumes:
       - .:/var/www/html
+      - /var/www/html/vendor
     ports:
       - "4040:4040"
     depends_on:
       - db
     environment:
-      - DB_HOST=devmanager-db
+      - DB_HOST=db
       - DB_PORT=5432
       - DB_DATABASE=devmanager
       - DB_USERNAME=joao
       - DB_PASSWORD=123456
+    networks:
+      - devmanager-network
 
   db:
     image: postgres:15
@@ -30,6 +35,27 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - devmanager-network
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile.dev
+      args:
+        NODE_ENV: development
+    container_name: devmanager-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../../frontend:/app
+      - /app/node_modules
+    networks:
+      - devmanager-network
 
 volumes:
   pgdata:
+
+networks:
+  devmanager-network:
+    driver: bridge
