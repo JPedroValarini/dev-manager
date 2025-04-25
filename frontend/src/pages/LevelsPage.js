@@ -2,23 +2,27 @@ import React, { useState, useEffect } from "react";
 import { FiEdit2, FiTrash2, FiPlus, FiSearch } from "react-icons/fi";
 import Header from "../components/Header";
 import api from "../services/api";
+import LevelModal from "../components/LevelModal";
+import EditLevelModal from "../components/EditLevelModal";
 
 function LevelsPage() {
   const [levels, setLevels] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [levelToDelete, setLevelToDelete] = useState(null);
+  const [currentLevel, setCurrentLevel] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Buscar níveis da API
   useEffect(() => {
     const fetchLevels = async () => {
       try {
         const response = await api.getLevels();
         const formattedLevels = response.data.map(level => ({
           id: level.id,
-          name: level.level, // Note que a API retorna "level" e não "name"
+          name: level.level,
           color: getLevelColor(level.level),
           createdAt: level.created_at
         }));
@@ -45,6 +49,38 @@ function LevelsPage() {
     }
   };
 
+  const handleAddLevel = async (levelData) => {
+    try {
+      const response = await api.createLevel(levelData);
+      const newLevel = {
+        id: response.data.id,
+        name: response.data.level,
+        color: getLevelColor(response.data.level),
+        createdAt: response.data.created_at
+      };
+      setLevels([...levels, newLevel]);
+      setIsAddModalOpen(false);
+    } catch (err) {
+      console.error("Erro ao criar nível:", err);
+      alert("Erro ao criar nível");
+    }
+  };
+
+  const handleEditLevel = async (levelData) => {
+    try {
+      const response = await api.updateLevel(currentLevel.id, levelData);
+      setLevels(levels.map(l => l.id === currentLevel.id ? { 
+        ...l, 
+        name: response.data.level,
+        color: getLevelColor(response.data.level)
+      } : l));
+      setIsEditModalOpen(false);
+    } catch (err) {
+      console.error("Erro ao editar nível:", err);
+      alert("Erro ao editar nível");
+    }
+  };
+
   const filteredLevels = levels.filter(level =>
     level.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -63,6 +99,11 @@ function LevelsPage() {
   const openDeleteModal = (id) => {
     setLevelToDelete(id);
     setIsDeleteModalOpen(true);
+  };
+
+  const openEditModal = (level) => {
+    setCurrentLevel(level);
+    setIsEditModalOpen(true);
   };
 
   if (isLoading) {
@@ -90,7 +131,6 @@ function LevelsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-
       <Header />
 
       <div className="p-6">
@@ -103,7 +143,7 @@ function LevelsPage() {
             
             <button
               className="mt-4 md:mt-0 flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg shadow hover:shadow-md transition-all hover:scale-105"
-              onClick={() => alert("Adicionar")}
+              onClick={() => setIsAddModalOpen(true)}
             >
               <FiPlus className="mr-2" />
               Adicionar
@@ -156,7 +196,7 @@ function LevelsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end space-x-3">
                             <button
-                              onClick={() => alert(`Edit level ${level.name}`)}
+                              onClick={() => openEditModal(level)}
                               className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors"
                               title="Edit"
                             >
@@ -187,23 +227,36 @@ function LevelsPage() {
         </div>
       </div>
 
+      <LevelModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddLevel}
+      />
+
+      <EditLevelModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        level={currentLevel}
+        onSubmit={handleEditLevel}
+      />
+
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Deletion</h3>
-            <p className="text-gray-600 mb-6">Tem certeza que vai deletar?.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Confirma a exclusão?</h3>
+            <p className="text-gray-600 mb-6">Não será possível recuperar depois. Tem certeza que deseja excluir?</p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 onClick={() => handleDelete(levelToDelete)}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
               >
-                Delete
+                Deletar
               </button>
             </div>
           </div>

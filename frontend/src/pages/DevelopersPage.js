@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiUser, FiStar } from "react-icons/fi";
 import Header from "../components/Header";
 import api from "../services/api";
+import EditDeveloperModal from "../components/EditDeveloperModal";
+import CreateDeveloperModal from "../components/CreateDeveloperModal";
 
 function DevelopersPage() {
   const [developers, setDevelopers] = useState([]);
@@ -11,15 +13,19 @@ function DevelopersPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [developerToEdit, setDeveloperToEdit] = useState(null);
+  const [levels, setLevels] = useState([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchDevelopers = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.getDevelopers();
-        const formattedDevelopers = response.data.map(dev => ({
+        const devResponse = await api.getDevelopers();
+        const formattedDevelopers = devResponse.data.map(dev => ({
           id: dev.id,
           name: dev.name,
-          level: dev.level.level,
+          level: dev.level?.level || "Nível não definido",
           levelId: dev.level_id,
           sex: dev.sex,
           age: dev.age,
@@ -29,19 +35,21 @@ function DevelopersPage() {
           skills: dev.hobby ? dev.hobby.split(' ') : []
         }));
         setDevelopers(formattedDevelopers);
+        const levelsResponse = await api.getLevels();
+        setLevels(levelsResponse.data || []);
       } catch (err) {
-        setError("Erro ao carregar desenvolvedores");
+        setError("Erro ao carregar dados");
         console.error(err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchDevelopers();
+    fetchData();
   }, []);
 
   const filteredDevelopers = developers
-    .filter(dev => 
+    .filter(dev =>
       dev.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       dev.level.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -58,16 +66,106 @@ function DevelopersPage() {
     }
   };
 
+  const handleEdit = async (formData) => {
+    try {
+      setIsLoading(true);
+
+      const formattedBirthDate = formData.birth_date.includes('T')
+        ? formData.birth_date.split('T')[0]
+        : formData.birth_date;
+
+      const dataToSend = {
+        name: formData.name,
+        sex: formData.sex,
+        birth_date: formattedBirthDate,
+        hobby: formData.hobby || null,
+        level_id: parseInt(formData.level_id)
+      };
+
+      await api.updateDeveloper(developerToEdit.id, dataToSend);
+
+      const devResponse = await api.getDevelopers();
+      const updatedDevelopers = devResponse.data.map(dev => ({
+        id: dev.id,
+        name: dev.name,
+        level: dev.level?.level || "Nível não definido",
+        levelId: dev.level_id,
+        sex: dev.sex,
+        age: dev.age,
+        birthDate: dev.birth_date,
+        hobby: dev.hobby,
+        joinDate: dev.created_at,
+        skills: dev.hobby ? dev.hobby.split(' ') : []
+      }));
+
+      setDevelopers(updatedDevelopers);
+      setIsEditModalOpen(false);
+
+    } catch (err) {
+      console.error("Erro na atualização:", {
+        error: err,
+        response: err.response?.data
+      });
+      alert(`Falha na atualização: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreate = async (formData) => {
+    try {
+      setIsLoading(true);
+
+      const dataToSend = {
+        name: formData.name,
+        sex: formData.sex,
+        birth_date: formData.birth_date,
+        hobby: formData.hobby || null,
+        level_id: parseInt(formData.level_id)
+      };
+
+      const response = await api.createDeveloper(dataToSend);
+      const devResponse = await api.getDevelopers();
+      const formattedDevelopers = devResponse.data.map(dev => ({
+        id: dev.id,
+        name: dev.name,
+        level: dev.level?.level || "Nível não definido",
+        levelId: dev.level_id,
+        sex: dev.sex,
+        age: dev.age,
+        birthDate: dev.birth_date,
+        hobby: dev.hobby,
+        joinDate: dev.created_at,
+        skills: dev.hobby ? dev.hobby.split(' ') : []
+      }));
+
+      setDevelopers(formattedDevelopers);
+      setIsCreateModalOpen(false);
+      alert('Desenvolvedor criado com sucesso!');
+
+    } catch (err) {
+      console.error("Erro ao criar desenvolvedor:", err);
+      alert(`Erro ao criar desenvolvedor: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const openDeleteModal = (id) => {
     setDeveloperToDelete(id);
     setIsDeleteModalOpen(true);
   };
 
+  const openEditModal = (developer) => {
+    setDeveloperToEdit(developer);
+    setIsEditModalOpen(true);
+  };
+
   const getLevelColor = (level) => {
-    switch(level) {
+    switch (level) {
       case "Júnior": return "bg-blue-100 text-blue-800";
       case "Pleno": return "bg-green-100 text-green-800";
-      case "Sênior": 
+      case "Sênior":
       case "Senior": return "bg-purple-100 text-purple-800";
       case "Tech Lead": return "bg-yellow-100 text-yellow-800";
       default: return "bg-gray-100 text-gray-800";
@@ -114,10 +212,10 @@ function DevelopersPage() {
               <h1 className="text-3xl font-bold text-gray-900">Time de Desenvolvedores</h1>
               <p className="mt-2 text-gray-600">Organize seu time de Desenvolvedores</p>
             </div>
-            
+
             <button
               className="mt-4 md:mt-0 flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg shadow hover:shadow-md transition-all hover:scale-105"
-              onClick={() => alert("Adicionar um Desenvolvedor")}
+              onClick={() => setIsCreateModalOpen(true)}
             >
               <FiPlus className="mr-2" />
               Adicionar
@@ -138,7 +236,7 @@ function DevelopersPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              
+
               <div className="flex space-x-2 overflow-x-auto pb-2">
                 <button
                   onClick={() => setActiveTab("all")}
@@ -225,7 +323,7 @@ function DevelopersPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end space-x-3">
                             <button
-                              onClick={() => alert(`Editar desenvolvedor ${dev.name}`)}
+                              onClick={() => openEditModal(dev)}
                               className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors"
                               title="Editar"
                             >
@@ -301,6 +399,22 @@ function DevelopersPage() {
           </div>
         </div>
       )}
+
+      <EditDeveloperModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        developer={developerToEdit}
+        onSubmit={handleEdit}
+        levels={levels}
+      />
+
+      <CreateDeveloperModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreate}
+        levels={levels}
+      />
+
     </div>
   );
 }

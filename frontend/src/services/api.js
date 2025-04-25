@@ -1,17 +1,36 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:4040/api'
+  baseURL: 'http://localhost:4040/api',
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
-export default {
+const apiService = {
   getLevels: () => api.get('/levels'),
-  createLevel: (level) => api.post('/levels', level),
+  createLevel: (levelData) => api.post('/levels', levelData),
   updateLevel: (id, level) => api.put(`/levels/${id}`, level),
   deleteLevel: (id) => api.delete(`/levels/${id}`),
 
   getDevelopers: () => api.get('/developers'),
-  createDeveloper: (developer) => api.post('/developers', developer),
-  updateDeveloper: (id, developer) => api.put(`/developers/${id}`, developer),
+  createDeveloper: (developer) => api.post('/developers', {
+    name: developer.name,
+    sex: developer.sex,
+    birth_date: developer.birth_date,
+    hobby: developer.hobby || null,
+    level_id: developer.level_id
+  }),
+
+  updateDeveloper: (id, developer) => api.put(`/developers/${id}`, {
+    name: developer.name,
+    sex: developer.sex,
+    birth_date: developer.birth_date,
+    hobby: developer.hobby || null,
+    level_id: developer.level_id
+  }),
+
   deleteDeveloper: (id) => api.delete(`/developers/${id}`)
 };
+
+export default apiService;
