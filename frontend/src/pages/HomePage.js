@@ -1,10 +1,65 @@
+import { useEffect, useState } from "react";
 import { FiCode, FiUsers, FiTrendingUp, FiBarChart2 } from "react-icons/fi";
 import Header from "../components/Header";
+import StatCard from "../components/StatCard";
+import api from "../services/api";
 
 function HomePage() {
+  const [developers, setDevelopers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDevelopers = async () => {
+      try {
+        const response = await api.getDevelopers();
+        setDevelopers(response.data);
+      } catch (err) {
+        setError("Erro ao carregar desenvolvedores");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDevelopers();
+  }, []);
+
+  const calculateAverageExperience = () => {
+    if (developers.length === 0) return 0;
+    const totalAge = developers.reduce((sum, dev) => sum + dev.age, 0);
+    return (totalAge / developers.length).toFixed(1);
+  };
+
+  const seniorCount = developers.filter(
+    dev => dev.level?.level === "Sênior" || dev.level?.level === "Senior"
+  ).length;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
+        <Header />
+        <div className="flex justify-center items-center h-64">
+          <p>Carregando dados...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
+        <Header />
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Erro! </strong>
+          <span className="block sm:inline">{error}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
-
       <Header />
 
       <div className="max-w-7xl mx-auto">
@@ -19,41 +74,27 @@ function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
-                <FiUsers size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Quantidade Desenvolvedores</p>
-                <p className="text-2xl font-semibold">24</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-green-100 text-green-600 mr-4">
-                <FiTrendingUp size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Nível Sênior</p>
-                <p className="text-2xl font-semibold">8</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
-                <FiBarChart2 size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Exp. Média</p>
-                <p className="text-2xl font-semibold">3.2 anos</p>
-              </div>
-            </div>
-          </div>
+          <StatCard
+            icon={FiUsers}
+            title="Quantidade Desenvolvedores"
+            value={developers.length}
+            iconBgColor="bg-blue-100"
+            iconTextColor="text-blue-600"
+          />
+          <StatCard
+            icon={FiTrendingUp}
+            title="Nível Sênior"
+            value={seniorCount}
+            iconBgColor="bg-green-100"
+            iconTextColor="text-green-600"
+          />
+          <StatCard
+            icon={FiBarChart2}
+            title="Exp. Média"
+            value={`${calculateAverageExperience()} anos`}
+            iconBgColor="bg-purple-100"
+            iconTextColor="text-purple-600"
+          />
         </div>
 
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
