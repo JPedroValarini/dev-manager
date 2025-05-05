@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { FiUsers, FiLayers, FiHome, FiChevronDown } from "react-icons/fi";
+import { FiUsers, FiLayers, FiHome } from "react-icons/fi";
 
 const Header = () => {
   const location = useLocation();

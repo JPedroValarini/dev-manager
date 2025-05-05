@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiUser, FiStar } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiUser } from "react-icons/fi";
 import Header from "../components/Header";
 import api from "../services/api";
 import EditDeveloperModal from "../components/EditDeveloperModal";
