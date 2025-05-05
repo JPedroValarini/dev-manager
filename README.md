@@ -79,7 +79,7 @@ Isso iniciará o servidor de desenvolvimento do React e você poderá acessar a 
 
 ## 🖥 Acessando a Aplicação
 
-- **Backend** (Laravel API): `http://localhost:4040`
+- **Backend** (Laravel API): `http://localhost:8000`
 - **Frontend** (React SPA): `http://localhost:3000`
 
 ## 💡 Funcionalidades

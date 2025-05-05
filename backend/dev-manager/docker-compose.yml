@@ -11,7 +11,7 @@ services:
       - .:/var/www/html
       - /var/www/html/vendor
     ports:
-      - "4040:4040"
+      - "8000:8000"
     depends_on:
       - db
     environment:
