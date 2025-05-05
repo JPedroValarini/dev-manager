@@ -9,6 +9,7 @@ RUN npm install
 COPY . .
 
 ENV CHOKIDAR_USEPOLLING=true
+ENV CI=false
 
 EXPOSE 3000
 
