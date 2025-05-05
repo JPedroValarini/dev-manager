@@ -7,4 +7,4 @@ done
 
 echo "✅ Migrations e seeders aplicados com sucesso."
 
-php artisan serve --host=0.0.0.0 --port=8000
+php artisan serve --host=0.0.0.0 --port=8080
